@@ -1,51 +1,74 @@
-import com.openshift.cloud.api.kas.DefaultApi;
-import com.openshift.cloud.api.kas.invoker.ApiClient;
-import com.openshift.cloud.api.kas.invoker.ApiException;
-import com.openshift.cloud.api.kas.invoker.Configuration;
-import com.openshift.cloud.api.kas.invoker.auth.HttpBearerAuth;
+import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
+import com.microsoft.kiota.http.OkHttpRequestAdapter;
+import com.openshift.cloud.api.kas.ApiClient;
 import com.openshift.cloud.api.kas.models.KafkaRequest;
 import com.openshift.cloud.api.kas.models.KafkaRequestPayload;
+import com.redhat.cloud.kiota.auth.RHAccessTokenProvider;
+
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class Main {
 
-    public static String token = "ACCESS_TOKEN";
-    public static void main(String[] args) {
+    public static String token = "OFFLINE_TOKEN";
+
+    public static void main(String[] args) throws Exception {
 
         // setup the client to be used, this is being set to use the
         // production API
-        ApiClient defaultClient = Configuration.getDefaultApiClient();
-        defaultClient.setBasePath("https://api.openshift.com");
+        OkHttpRequestAdapter adapter = new OkHttpRequestAdapter(
+                new BaseBearerTokenAuthenticationProvider(
+                        new RHAccessTokenProvider(token)
+                )
+        );
 
-        // set the token to be used, this needs to be the access token
-        // for the account you want to use
-        HttpBearerAuth Bearer = (HttpBearerAuth) defaultClient.getAuthentication("Bearer");
-        Bearer.setBearerToken(token);
+        adapter.setBaseUrl("https://api.openshift.com");
+        var client = new ApiClient(adapter);
 
-        DefaultApi apiInstance = new DefaultApi(defaultClient);
 
-        KafkaRequestPayload kafkaRequestPayload = new KafkaRequestPayload().name("instance");
-        createKafka(apiInstance, kafkaRequestPayload);
+        KafkaRequestPayload payload = new KafkaRequestPayload();
+        payload.setName("instance");
+        createKafka(client, payload);
 
-        listKafkas(apiInstance, "1", "99", "", "");
+        listKafkas(client, "1", "99", "", "");
     }
 
-    public static void createKafka(DefaultApi apiInstance, KafkaRequestPayload payload) {
-        try {
-            KafkaRequest result = apiInstance.createKafka(true, payload);
-            System.out.println(result);
-        } catch (ApiException e) {
-            e.printStackTrace();
+    private static void createKafka(ApiClient client, KafkaRequestPayload payload) throws Exception {
+        var kafka = client
+                .api()
+                .kafkas_mgmt()
+                .v1()
+                .kafkas()
+                .post(payload, (config) -> {
+                    assert config.queryParameters != null;
+                    config.queryParameters.async = true;
+                })
+                .get(3, TimeUnit.SECONDS);
+
+        System.out.printf("Name: %s :: ID %s\n", kafka.getName(), kafka.getId());
+    }
+
+    private static void listKafkas(ApiClient client, String page, String size, String orderBy, String search) throws Exception {
+        var items = client
+                .api()
+                .kafkas_mgmt()
+                .v1()
+                .kafkas()
+                .get((config) -> {
+                    assert config.queryParameters != null;
+                    config.queryParameters.page = page;
+                    config.queryParameters.size = size;
+                    config.queryParameters.orderBy = orderBy;
+                    config.queryParameters.search = search;
+                })
+                .get(3, TimeUnit.SECONDS)
+                .getItems();
+
+        for(var item : items) {
+            System.out.printf("Name: %s :: ID %s\n", item.getName(), item.getId());
         }
     }
 
-    public static void listKafkas(DefaultApi apiInstance, String page, String size, String orderBy, String search) {
-        try {
-            var result = apiInstance.getKafkas(page, size, orderBy, search);
-            for(var item : result.getItems()) {
-                System.out.printf("Name %s :: id %s%n", item.getName(), item.getId());
-            }
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
-    }
 }
