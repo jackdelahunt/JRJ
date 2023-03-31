@@ -8,18 +8,57 @@
     <artifactId>JRJ</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <repositories>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </repositories>
+
     <properties>
         <maven.compiler.source>18</maven.compiler.source>
         <maven.compiler.target>18</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <sdk.version>1.0.1</sdk.version>
+        <kiota.version>0.3.2</kiota.version>
+        <auth.version>0.0.3</auth.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.redhat.cloud</groupId>
             <artifactId>kafka-management-sdk</artifactId>
-            <version>0.31.0</version>
-            <scope>compile</scope>
+            <version>${sdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-abstractions</artifactId>
+            <version>${kiota.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-json</artifactId>
+            <version>${kiota.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-text</artifactId>
+            <version>${kiota.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-form</artifactId>
+            <version>${kiota.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-http-okHttp</artifactId>
+            <version>${kiota.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.redhat.cloud</groupId>
+            <artifactId>kiota-rh-auth</artifactId>
+            <version>${auth.version}</version>
         </dependency>
     </dependencies>
 
